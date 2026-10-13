@@ -1,0 +1,12 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "schema.sql"
+    queries: "../internal/domains/users"
+    gen:
+      go:
+        package: "users"
+        out: "../internal/domains/users"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
