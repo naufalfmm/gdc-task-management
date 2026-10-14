@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
@@ -17,6 +18,16 @@ type Config struct {
 	DBPassword string `envconfig:"DB_PASSWORD"`
 	DBName     string `envconfig:"DB_NAME"`
 	DBSSL      string `envconfig:"DB_SSL" default:"disable"`
+
+	BcryptCost int `envconfig:"BCRYPT_COST" default:"10"`
+
+	JwtPrivateKey             string        `envconfig:"JWT_PRIVATE_KEY"`
+	JwtPublicKey              string        `envconfig:"JWT_PUBLIC_KEY"`
+	JwtAlgorithm              string        `envconfig:"JWT_ALGORITHM"`
+	JwtAccessTokenExpiration  time.Duration `envconfig:"JWT_ACCESS_TOKEN_EXPIRATION"`
+	JwtRefreshTokenExpiration time.Duration `envconfig:"JWT_REFRESH_TOKEN_EXPIRATION"`
+
+	PasswordValidation string `envconfig:"PASSWORD_VALIDATION"`
 }
 
 func (c *Config) GetDSN() string {

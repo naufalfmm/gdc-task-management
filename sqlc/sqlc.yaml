@@ -2,6 +2,16 @@ version: "2"
 sql:
   - engine: "postgresql"
     schema: "schema.sql"
+    queries: "../internal/domains/teams"
+    gen:
+      go:
+        package: "teams"
+        out: "../internal/domains/teams"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+  - engine: "postgresql"
+    schema: "schema.sql"
     queries: "../internal/domains/users"
     gen:
       go:
