@@ -6,3 +6,6 @@ INSERT INTO teams (name)
 VALUES ($1)
 ON CONFLICT (name) DO NOTHING
 RETURNING *;
+
+-- name: GetTeamByID :one
+SELECT * FROM teams WHERE id = $1;

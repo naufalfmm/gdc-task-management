@@ -9,6 +9,22 @@ import (
 	"context"
 )
 
+const getTeamByID = `-- name: GetTeamByID :one
+SELECT id, name, created_at, updated_at FROM teams WHERE id = $1
+`
+
+func (q *Queries) GetTeamByID(ctx context.Context, id int64) (Team, error) {
+	row := q.db.QueryRow(ctx, getTeamByID, id)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getTeamByName = `-- name: GetTeamByName :one
 SELECT id, name, created_at, updated_at FROM teams WHERE name = $1
 `

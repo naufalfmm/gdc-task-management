@@ -25,4 +25,5 @@ func (r Routes) Register(ge *gin.Engine) {
 
 	auth := ge.Group("/auth")
 	auth.POST("/register", r.authController.Register)
+	auth.POST("/login", r.authController.Login)
 }

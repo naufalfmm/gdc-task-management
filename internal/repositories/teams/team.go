@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	GetTeamByName(ctx context.Context, name string) (daos.Team, error)
 	InsertTeam(ctx context.Context, team daos.Team) (daos.Team, error)
+	GetTeamByID(ctx context.Context, id int64) (daos.Team, error)
 }
 
 type repository struct {
@@ -54,6 +55,27 @@ func (r *repository) InsertTeam(ctx context.Context, team daos.Team) (daos.Team,
 	}
 
 	t, err := q.InsertTeam(ctx, team.Name)
+	if err != nil {
+		return daos.Team{}, err
+	}
+
+	return daos.Team{
+		ID:        t.ID,
+		Name:      t.Name,
+		CreatedAt: t.CreatedAt.Time,
+		UpdatedAt: t.UpdatedAt.Time,
+	}, nil
+}
+
+func (r *repository) GetTeamByID(ctx context.Context, id int64) (daos.Team, error) {
+	q := r.querier
+
+	tx, ok := txmanager.ExtractTx[pgx.Tx](ctx)
+	if ok {
+		q = teams.New(tx)
+	}
+
+	t, err := q.GetTeamByID(ctx, id)
 	if err != nil {
 		return daos.Team{}, err
 	}

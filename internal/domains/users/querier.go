@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	GetUserByEmail(ctx context.Context, email string) (User, error)
 	InsertUser(ctx context.Context, arg InsertUserParams) (User, error)
 }
 

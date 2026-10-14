@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/naufalfmm/gdc-task-management/internal/consts"
 	"github.com/naufalfmm/gdc-task-management/internal/models/daos"
 	"github.com/naufalfmm/gdc-task-management/internal/models/dtos"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken"
@@ -15,7 +16,8 @@ import (
 )
 
 type Usecase interface {
-	RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dtos.RegisterResponse, error)
+	RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dtos.AuthResponse, error)
+	Login(ctx context.Context, r dtos.LoginRequest) (dtos.AuthResponse, error)
 }
 
 type usecase struct {
@@ -59,17 +61,17 @@ func (a *usecase) checkTeamExisting(ctx context.Context, teamName string) (*daos
 	return &team, nil
 }
 
-func (a *usecase) RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dtos.RegisterResponse, error) {
+func (a *usecase) RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dtos.AuthResponse, error) {
 	tx, ctx, err := a.txManager.Begin(ctx)
 	if err != nil {
-		return dtos.RegisterResponse{}, err
+		return dtos.AuthResponse{}, err
 	}
 
 	defer tx.Rollback(ctx)
 
 	team, err := a.checkTeamExisting(ctx, r.TeamName)
 	if err != nil {
-		return dtos.RegisterResponse{}, err
+		return dtos.AuthResponse{}, err
 	}
 
 	if team == nil {
@@ -77,7 +79,7 @@ func (a *usecase) RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dto
 			Name: r.TeamName,
 		})
 		if err != nil {
-			return dtos.RegisterResponse{}, err
+			return dtos.AuthResponse{}, err
 		}
 
 		team = &createdTeam
@@ -85,7 +87,7 @@ func (a *usecase) RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dto
 
 	hashedPass, err := a.passwordHasher.Hash(r.Password)
 	if err != nil {
-		return dtos.RegisterResponse{}, err
+		return dtos.AuthResponse{}, err
 	}
 
 	user, err := a.userRepositories.InsertUser(ctx, daos.User{
@@ -95,17 +97,48 @@ func (a *usecase) RegisterUser(ctx context.Context, r dtos.RegisterRequest) (dto
 		TeamID:       team.ID,
 	})
 	if err != nil {
-		return dtos.RegisterResponse{}, err
+		return dtos.AuthResponse{}, err
 	}
 
 	tx.Commit(ctx)
 
 	accToken, refToken, err := a.generateAuthToken(user)
 	if err != nil {
-		return dtos.RegisterResponse{}, err
+		return dtos.AuthResponse{}, err
 	}
 
-	return dtos.RegisterResponse{
+	return dtos.AuthResponse{
+		Email:    user.Email,
+		Name:     user.Email,
+		TeamName: team.Name,
+		Token: dtos.TokenResponse{
+			AccessToken:  accToken,
+			RefreshToken: refToken,
+		},
+	}, nil
+}
+
+func (a *usecase) Login(ctx context.Context, r dtos.LoginRequest) (dtos.AuthResponse, error) {
+	user, err := a.userRepositories.GetUserByEmail(ctx, r.Email)
+	if err != nil {
+		return dtos.AuthResponse{}, err
+	}
+
+	if err := a.passwordHasher.Verify(r.Password, user.PasswordHash); err != nil {
+		return dtos.AuthResponse{}, consts.ErrWrongPassword
+	}
+
+	team, err := a.teamRepositories.GetTeamByID(ctx, user.TeamID)
+	if err != nil {
+		return dtos.AuthResponse{}, err
+	}
+
+	accToken, refToken, err := a.generateAuthToken(user)
+	if err != nil {
+		return dtos.AuthResponse{}, err
+	}
+
+	return dtos.AuthResponse{
 		Email:    user.Email,
 		Name:     user.Email,
 		TeamName: team.Name,

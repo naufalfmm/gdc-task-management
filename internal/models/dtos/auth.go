@@ -56,9 +56,22 @@ type TokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type RegisterResponse struct {
+type AuthResponse struct {
 	Email    string        `json:"email"`
 	Name     string        `json:"name"`
 	TeamName string        `json:"team_name"`
 	Token    TokenResponse `json:"token"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"requireds"`
+}
+
+func (r *LoginRequest) FromGinContext(gc *gin.Context) error {
+	if err := gc.ShouldBindJSON(r); err != nil {
+		return validator.NewFromValidationErrors(*r, err)
+	}
+
+	return nil
 }

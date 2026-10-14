@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	GetTeamByID(ctx context.Context, id int64) (Team, error)
 	GetTeamByName(ctx context.Context, name string) (Team, error)
 	InsertTeam(ctx context.Context, name string) (Team, error)
 }
