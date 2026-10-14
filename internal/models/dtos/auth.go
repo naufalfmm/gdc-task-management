@@ -65,7 +65,7 @@ type AuthResponse struct {
 
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"requireds"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (r *LoginRequest) FromGinContext(gc *gin.Context) error {

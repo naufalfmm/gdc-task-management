@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/naufalfmm/gdc-task-management/config"
 	teamdomain "github.com/naufalfmm/gdc-task-management/internal/domains/teams"
@@ -21,6 +22,7 @@ import (
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken/jwt"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/password/bcrypt"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager/pgx"
+	v10 "github.com/naufalfmm/gdc-task-management/internal/pkg/validator/v10"
 	teamrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/teams"
 	userrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/users"
 	authusc "github.com/naufalfmm/gdc-task-management/internal/usecases/auth"
@@ -36,6 +38,10 @@ func main() {
 
 	passHasher := bcrypt.NewBcryptHasher(conf.BcryptCost)
 	jwtoken := jwt.NewJWT(conf.JwtPrivateKey, conf.JwtPublicKey, conf.JwtAlgorithm, conf.JwtAccessTokenExpiration, conf.JwtRefreshTokenExpiration)
+	validator, err := v10.NewV10()
+	if err != nil {
+		panic(err)
+	}
 
 	ctx := context.Background()
 	dbpool, err := pgxpool.New(ctx, conf.GetDSN())
@@ -68,6 +74,8 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", conf.ServicePort),
 		Handler: ge,
 	}
+
+	binding.Validator = validator
 
 	if err := httpServer.ListenAndServe(); err != nil {
 		panic(err)
