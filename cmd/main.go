@@ -14,18 +14,24 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/naufalfmm/gdc-task-management/config"
+	"github.com/naufalfmm/gdc-task-management/internal/domains/idempotencykeys"
+	"github.com/naufalfmm/gdc-task-management/internal/domains/tasks"
 	teamdomain "github.com/naufalfmm/gdc-task-management/internal/domains/teams"
 	userdomain "github.com/naufalfmm/gdc-task-management/internal/domains/users"
 	authctrl "github.com/naufalfmm/gdc-task-management/internal/infrastructures/rest/controllers/auth"
+	taskctrl "github.com/naufalfmm/gdc-task-management/internal/infrastructures/rest/controllers/tasks"
 	"github.com/naufalfmm/gdc-task-management/internal/infrastructures/rest/routes"
 	"github.com/naufalfmm/gdc-task-management/internal/middlewares"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken/jwt"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/password/bcrypt"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager/pgx"
 	v10 "github.com/naufalfmm/gdc-task-management/internal/pkg/validator/v10"
+	idemkeyrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
+	taskrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
 	teamrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/teams"
 	userrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/users"
 	authusc "github.com/naufalfmm/gdc-task-management/internal/usecases/auth"
+	taskusc "github.com/naufalfmm/gdc-task-management/internal/usecases/tasks"
 )
 
 func main() {
@@ -60,14 +66,23 @@ func main() {
 	userQuerier := userdomain.New(dbpool)
 	userRepositories := userrepo.NewRepository(userQuerier)
 
+	idempotencyKeyQuerier := idempotencykeys.New(dbpool)
+	idempotencyKeyRepositories := idemkeyrepo.NewRepository(idempotencyKeyQuerier)
+
+	taskQuerier := tasks.New(dbpool)
+	taskRepositories := taskrepo.NewRepository(taskQuerier)
+
 	pgxtxmanager := pgx.NewPgxTxManager(dbpool)
 
 	authUsecase := authusc.NewAuthUsecase(pgxtxmanager, teamRepositories, userRepositories, passHasher, jwtoken)
+	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, taskRepositories, idempotencyKeyRepositories, *conf)
 
-	middleware := middlewares.NewMiddleware()
+	middleware := middlewares.NewMiddleware(jwtoken)
 	authControllers := authctrl.NewAuthController(authUsecase)
 
-	routes := routes.NewRoutes(authControllers, middleware)
+	taskControllers := taskctrl.NewTaskController(taskUsecase)
+
+	routes := routes.NewRoutes(authControllers, taskControllers, middleware)
 	routes.Register(ge)
 
 	httpServer := http.Server{
@@ -77,9 +92,11 @@ func main() {
 
 	binding.Validator = validator
 
-	if err := httpServer.ListenAndServe(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(

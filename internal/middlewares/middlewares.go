@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken/jwt"
+	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken"
 )
 
 type Middlewares interface {
@@ -12,11 +12,11 @@ type Middlewares interface {
 }
 
 type middlewares struct {
-	jwt jwt.JWT
+	authToken authtoken.AuthToken
 }
 
-func NewMiddleware(jwt jwt.JWT) Middlewares {
+func NewMiddleware(authToken authtoken.AuthToken) Middlewares {
 	return &middlewares{
-		jwt: jwt,
+		authToken: authToken,
 	}
 }

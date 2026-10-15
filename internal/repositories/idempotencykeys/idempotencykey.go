@@ -1,4 +1,4 @@
-package idempotencykey
+package idempotencykeys
 
 import (
 	"context"

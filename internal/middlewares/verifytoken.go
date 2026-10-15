@@ -32,7 +32,7 @@ func (m middlewares) VerifyToken() gin.HandlerFunc {
 			token = tokenSplit[1]
 		}
 
-		tokenData, err := m.jwt.Decode(token, &dtos.LoginClaims{})
+		tokenData, err := m.authToken.Decode(token, &dtos.LoginClaims{})
 		if err != nil {
 			gc.AbortWithStatusJSON(http.StatusUnauthorized, dtos.Response[dtos.ErrorResponse]{
 				Status:    false,

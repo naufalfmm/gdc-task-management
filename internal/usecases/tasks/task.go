@@ -8,7 +8,7 @@ import (
 	"github.com/naufalfmm/gdc-task-management/internal/models/daos"
 	"github.com/naufalfmm/gdc-task-management/internal/models/dtos"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager"
-	"github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykey"
+	"github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
 )
 
@@ -19,12 +19,12 @@ type Usecase interface {
 type usecase struct {
 	txManager                  txmanager.TxManager
 	taskRepositories           tasks.Repository
-	idempotencyKeyRepositories idempotencykey.Repository
+	idempotencyKeyRepositories idempotencykeys.Repository
 
 	conf config.Config
 }
 
-func NewTaskUsecase(txManager txmanager.TxManager, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykey.Repository, conf config.Config) Usecase {
+func NewTaskUsecase(txManager txmanager.TxManager, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, conf config.Config) Usecase {
 	return &usecase{
 		txManager:                  txManager,
 		taskRepositories:           taskRepositories,
