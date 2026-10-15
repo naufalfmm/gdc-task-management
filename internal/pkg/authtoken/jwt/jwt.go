@@ -14,7 +14,7 @@ const (
 	DEFAULT_ALGORITHM                = "HS256"
 )
 
-type jwt struct {
+type JWT struct {
 	privateKey string
 	alg        string
 	accexp     time.Duration
@@ -36,7 +36,7 @@ func NewJWT(privateKey, publicKey, alg string, accexp, refexp time.Duration) aut
 		alg = DEFAULT_ALGORITHM
 	}
 
-	return &jwt{
+	return &JWT{
 		privateKey: privateKey,
 		alg:        alg,
 		accexp:     accexp,
@@ -45,7 +45,7 @@ func NewJWT(privateKey, publicKey, alg string, accexp, refexp time.Duration) aut
 	}
 }
 
-func (j *jwt) generateToken(claim authtoken.AuthTokenClaim, exp time.Duration, privateKey string) (string, error) {
+func (j *JWT) generateToken(claim authtoken.AuthTokenClaim, exp time.Duration, privateKey string) (string, error) {
 	claim = claim.SetExp(exp)
 	jwtClaims, ok := claim.(gojwt.Claims)
 	if !ok {
@@ -58,7 +58,7 @@ func (j *jwt) generateToken(claim authtoken.AuthTokenClaim, exp time.Duration, p
 	return newToken.SignedString([]byte(privateKey))
 }
 
-func (j *jwt) Generate(claim authtoken.AuthTokenClaim) (string, string, error) {
+func (j *JWT) Generate(claim authtoken.AuthTokenClaim) (string, string, error) {
 	signedAccessToken, err := j.generateToken(claim, j.accexp, j.privateKey)
 	if err != nil {
 		return "", "", err
@@ -72,7 +72,7 @@ func (j *jwt) Generate(claim authtoken.AuthTokenClaim) (string, string, error) {
 	return signedAccessToken, signedRefreshToken, nil
 }
 
-func (j *jwt) Decode(t string, claim authtoken.AuthTokenClaim) (authtoken.AuthTokenClaim, error) {
+func (j *JWT) Decode(t string, claim authtoken.AuthTokenClaim) (authtoken.AuthTokenClaim, error) {
 	jwtClaims, ok := claim.(gojwt.Claims)
 	if !ok {
 		return nil, errors.New("claim does not implement gojwt.Claims")

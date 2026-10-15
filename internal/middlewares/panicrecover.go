@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/naufalfmm/gdc-task-management/internal/consts"
 	"github.com/naufalfmm/gdc-task-management/internal/models/dtos"
 )
 
@@ -50,12 +52,17 @@ func (m middlewares) PanicRecover() gin.HandlerFunc {
 				}
 			}
 
-			gc.AbortWithStatusJSON(http.StatusInternalServerError, dtos.Response[error]{
-				Code:    "PANIC_RECOVER",
-				Message: err.Error(),
-				Data:    err,
+			gc.AbortWithStatusJSON(http.StatusInternalServerError, dtos.Response[dtos.ErrorResponse]{
+				Status:    false,
+				Code:      consts.ErrorCodePanicRecover,
+				Message:   err.Error(),
+				Timestamp: time.Now(),
+				Data: dtos.ErrorResponse{
+					Error: err,
+				},
 			})
 		}()
+
 		gc.Next()
 	}
 }

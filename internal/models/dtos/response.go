@@ -1,8 +1,15 @@
 package dtos
 
+import "time"
+
+type ErrorResponse struct {
+	Error error `json:"error"`
+}
+
 type Response[T any] struct {
-	Code    string `json:"code"`
-	Data    T      `json:"data"`
-	Message string `json:"message"`
-	Error   *error `json:"error,omitempty"`
+	Status    bool      `json:"status"`
+	Code      int       `json:"code,omitempty"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+	Data      T         `json:"data"`
 }

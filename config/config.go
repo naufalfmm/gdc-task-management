@@ -28,6 +28,8 @@ type Config struct {
 	JwtRefreshTokenExpiration time.Duration `envconfig:"JWT_REFRESH_TOKEN_EXPIRATION"`
 
 	PasswordValidation string `envconfig:"PASSWORD_VALIDATION"`
+
+	IdempotencyKeyExpiration time.Duration `envconfig:"IDEMPOTENCY_KEY_EXPIRATION" default:"24h"`
 }
 
 func (c *Config) GetDSN() string {

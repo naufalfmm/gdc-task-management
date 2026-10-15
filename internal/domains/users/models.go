@@ -8,6 +8,34 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type IdempotencyKey struct {
+	Key       string           `json:"key"`
+	Type      string           `json:"type"`
+	TypeID    int64            `json:"type_id"`
+	ExpiresAt pgtype.Timestamp `json:"expires_at"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+type Task struct {
+	ID          int64            `json:"id"`
+	Title       string           `json:"title"`
+	Description pgtype.Text      `json:"description"`
+	Status      string           `json:"status"`
+	UserID      pgtype.Int8      `json:"user_id"`
+	AssigneeID  pgtype.Int8      `json:"assignee_id"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+}
+
+type TaskLog struct {
+	ID        int64            `json:"id"`
+	TaskID    pgtype.Int8      `json:"task_id"`
+	ActorID   pgtype.Int8      `json:"actor_id"`
+	Action    string           `json:"action"`
+	Details   []byte           `json:"details"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
 type Team struct {
 	ID        int64            `json:"id"`
 	Name      string           `json:"name"`

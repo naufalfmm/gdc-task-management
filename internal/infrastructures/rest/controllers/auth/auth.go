@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/naufalfmm/gdc-task-management/internal/consts"
@@ -23,10 +24,14 @@ func NewAuthController(authUsecase auth.Usecase) Controller {
 func (c Controller) Register(gc *gin.Context) {
 	var req dtos.RegisterRequest
 	if err := req.FromGinContext(gc); err != nil {
-		gc.JSON(http.StatusBadRequest, dtos.Response[any]{
-			Code:    "BAD_REQUEST",
-			Message: err.Error(),
-			Error:   &err,
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeBadRequest,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
 		})
 
 		return
@@ -39,28 +44,38 @@ func (c Controller) Register(gc *gin.Context) {
 	}
 
 	gc.JSON(http.StatusOK, dtos.Response[dtos.AuthResponse]{
-		Code: "SUCCESS",
-		Data: resp,
+		Status:    true,
+		Message:   "Success",
+		Timestamp: time.Now(),
+		Data:      resp,
 	})
 }
 
 func (c Controller) buildErrorRegister(gc *gin.Context, err error) {
 	statusCode := http.StatusInternalServerError
 
-	gc.JSON(statusCode, dtos.Response[error]{
-		Code:    "ANY_ERROR",
-		Message: err.Error(),
-		Error:   &err,
+	gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
+		Status:    false,
+		Code:      consts.ErrorCodeInternalError,
+		Message:   consts.ErrDefaultError.Error(),
+		Timestamp: time.Now(),
+		Data: dtos.ErrorResponse{
+			Error: consts.ErrDefaultError,
+		},
 	})
 }
 
 func (c Controller) Login(gc *gin.Context) {
 	var req dtos.LoginRequest
 	if err := req.FromGinContext(gc); err != nil {
-		gc.JSON(http.StatusBadRequest, dtos.Response[any]{
-			Code:    "BAD_REQUEST",
-			Message: err.Error(),
-			Error:   &err,
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeBadRequest,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
 		})
 
 		return
@@ -73,8 +88,10 @@ func (c Controller) Login(gc *gin.Context) {
 	}
 
 	gc.JSON(http.StatusOK, dtos.Response[dtos.AuthResponse]{
-		Code: "SUCCESS",
-		Data: resp,
+		Status:    true,
+		Message:   "Success",
+		Timestamp: time.Now(),
+		Data:      resp,
 	})
 }
 
@@ -82,17 +99,25 @@ func (c Controller) buildErrorLogin(gc *gin.Context, err error) {
 	statusCode := http.StatusInternalServerError
 
 	if errors.Is(err, consts.ErrWrongPassword) {
-		gc.JSON(http.StatusUnauthorized, dtos.Response[error]{
-			Code:    "WRONG_PASSWORD",
-			Message: err.Error(),
-			Error:   &err,
+		gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeWrongPassword,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
 		})
 		return
 	}
 
-	gc.JSON(statusCode, dtos.Response[error]{
-		Code:    "ANY_ERROR",
-		Message: err.Error(),
-		Error:   &err,
+	gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
+		Status:    false,
+		Code:      consts.ErrorCodeInternalError,
+		Message:   consts.ErrDefaultError.Error(),
+		Timestamp: time.Now(),
+		Data: dtos.ErrorResponse{
+			Error: consts.ErrDefaultError,
+		},
 	})
 }

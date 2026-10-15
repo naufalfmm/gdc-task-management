@@ -20,3 +20,24 @@ sql:
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_interface: true
+  - engine: "postgresql"
+    schema: "schema.sql"
+    queries: "../internal/domains/tasks"
+    gen:
+      go:
+        package: "tasks"
+        out: "../internal/domains/tasks"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+  - engine: "postgresql"
+    schema: "schema.sql"
+    queries: "../internal/domains/idempotencykeys"
+    gen:
+      go:
+        package: "idempotencykeys"
+        out: "../internal/domains/idempotencykeys"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+  

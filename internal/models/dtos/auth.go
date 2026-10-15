@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken"
-	"github.com/naufalfmm/gdc-task-management/internal/pkg/validator"
+	"github.com/naufalfmm/gdc-task-management/internal/pkg/errors"
 )
 
 type RegisterRequest struct {
@@ -22,7 +22,7 @@ func (r *RegisterRequest) ValidatePassword() error {
 
 func (r *RegisterRequest) FromGinContext(gc *gin.Context) error {
 	if err := gc.ShouldBindJSON(r); err != nil {
-		return validator.NewFromValidationErrors(*r, err)
+		return errors.GenerateError(*r, err)
 	}
 
 	return nil
@@ -70,7 +70,7 @@ type LoginRequest struct {
 
 func (r *LoginRequest) FromGinContext(gc *gin.Context) error {
 	if err := gc.ShouldBindJSON(r); err != nil {
-		return validator.NewFromValidationErrors(*r, err)
+		return errors.GenerateError(*r, err)
 	}
 
 	return nil
