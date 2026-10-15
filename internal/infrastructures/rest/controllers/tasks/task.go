@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -52,6 +53,62 @@ func (c Controller) CreateTask(gc *gin.Context) {
 
 func (c Controller) buildErrorCreateTask(gc *gin.Context, err error) {
 	statusCode := http.StatusInternalServerError
+
+	gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
+		Status:    false,
+		Code:      consts.ErrorCodeInternalError,
+		Message:   consts.ErrDefaultError.Error(),
+		Timestamp: time.Now(),
+		Data: dtos.ErrorResponse{
+			Error: consts.ErrDefaultError,
+		},
+	})
+}
+
+func (c Controller) AssignTask(gc *gin.Context) {
+	var req dtos.AssignTaskRequest
+	if err := req.FromGinContext(gc); err != nil {
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeBadRequest,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+
+		return
+	}
+
+	resp, err := c.taskUsecase.AssignTask(gc.Request.Context(), req)
+	if err != nil {
+		c.buildErrorForAssignTask(gc, err)
+		return
+	}
+
+	gc.JSON(http.StatusOK, dtos.Response[dtos.AssignTaskResponse]{
+		Status:    true,
+		Message:   "Success",
+		Timestamp: time.Now(),
+		Data:      resp,
+	})
+}
+
+func (c Controller) buildErrorForAssignTask(gc *gin.Context, err error) {
+	statusCode := http.StatusInternalServerError
+
+	if errors.Is(err, consts.ErrDifferentTeam) {
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeDifferentTeam,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+	}
 
 	gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
 		Status:    false,

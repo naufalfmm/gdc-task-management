@@ -8,3 +8,10 @@ SELECT *
 FROM tasks
 WHERE id = $1
 FOR UPDATE;
+
+-- name: AssignTask :one
+UPDATE tasks
+SET assignee_id = $1,
+    updated_at = NOW()
+WHERE id = $2
+RETURNING *;

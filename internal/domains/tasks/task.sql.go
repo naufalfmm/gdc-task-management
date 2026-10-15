@@ -11,6 +11,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const assignTask = `-- name: AssignTask :one
+UPDATE tasks
+SET assignee_id = $1,
+    updated_at = NOW()
+WHERE id = $2
+RETURNING id, title, description, status, user_id, assignee_id, created_at, updated_at
+`
+
+type AssignTaskParams struct {
+	AssigneeID pgtype.Int8 `json:"assignee_id"`
+	ID         int64       `json:"id"`
+}
+
+func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (Task, error) {
+	row := q.db.QueryRow(ctx, assignTask, arg.AssigneeID, arg.ID)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.UserID,
+		&i.AssigneeID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks (title, description, status, user_id, assignee_id)
 VALUES($1, $2, $3, $4, $5)

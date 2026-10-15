@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	AssignTask(ctx context.Context, arg AssignTaskParams) (Task, error)
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error)
 	GetTaskByID(ctx context.Context, id int64) (Task, error)
 }

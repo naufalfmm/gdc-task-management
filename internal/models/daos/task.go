@@ -17,3 +17,12 @@ type Task struct {
 	CreatedAt   time.Time
 	UpdatedAt   *time.Time
 }
+
+type TaskLog struct {
+	ID        int64
+	TaskID    int64
+	ActorID   int64
+	Action    string
+	Details   map[string]any
+	CreatedAt time.Time
+}

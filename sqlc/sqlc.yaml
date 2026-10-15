@@ -32,6 +32,16 @@ sql:
         emit_interface: true
   - engine: "postgresql"
     schema: "schema.sql"
+    queries: "../internal/domains/tasklogs"
+    gen:
+      go:
+        package: "tasklogs"
+        out: "../internal/domains/tasklogs"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+  - engine: "postgresql"
+    schema: "schema.sql"
     queries: "../internal/domains/idempotencykeys"
     gen:
       go:

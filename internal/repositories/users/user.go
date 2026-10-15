@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	InsertUser(ctx context.Context, user daos.User) (daos.User, error)
 	GetUserByEmail(ctx context.Context, email string) (daos.User, error)
+	GetUserByID(ctx context.Context, id int64) (daos.User, error)
 }
 
 type repository struct {
@@ -63,6 +64,30 @@ func (r *repository) GetUserByEmail(ctx context.Context, email string) (daos.Use
 	}
 
 	u, err := q.GetUserByEmail(ctx, email)
+	if err != nil {
+		return daos.User{}, err
+	}
+
+	return daos.User{
+		ID:           u.ID,
+		Email:        u.Email,
+		PasswordHash: u.PasswordHash,
+		Name:         u.Name,
+		TeamID:       u.TeamID.Int64,
+		CreatedAt:    u.CreatedAt.Time,
+		UpdatedAt:    u.UpdatedAt.Time,
+	}, nil
+}
+
+func (r *repository) GetUserByID(ctx context.Context, id int64) (daos.User, error) {
+	q := r.querier
+
+	tx, ok := txmanager.ExtractTx[pgx.Tx](ctx)
+	if ok {
+		q = users.New(tx)
+	}
+
+	u, err := q.GetUserByID(ctx, id)
 	if err != nil {
 		return daos.User{}, err
 	}

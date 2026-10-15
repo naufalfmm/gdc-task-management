@@ -5,30 +5,35 @@ import (
 	"time"
 
 	"github.com/naufalfmm/gdc-task-management/config"
+	"github.com/naufalfmm/gdc-task-management/internal/consts"
 	"github.com/naufalfmm/gdc-task-management/internal/models/daos"
 	"github.com/naufalfmm/gdc-task-management/internal/models/dtos"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
+	"github.com/naufalfmm/gdc-task-management/internal/repositories/users"
 )
 
 type Usecase interface {
 	CreateTask(ctx context.Context, r dtos.CreateTaskRequest) (dtos.CreateTaskResponse, error)
+	AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error)
 }
 
 type usecase struct {
 	txManager                  txmanager.TxManager
 	taskRepositories           tasks.Repository
 	idempotencyKeyRepositories idempotencykeys.Repository
+	userRepositories           users.Repository
 
 	conf config.Config
 }
 
-func NewTaskUsecase(txManager txmanager.TxManager, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, conf config.Config) Usecase {
+func NewTaskUsecase(txManager txmanager.TxManager, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, conf config.Config) Usecase {
 	return &usecase{
 		txManager:                  txManager,
 		taskRepositories:           taskRepositories,
 		idempotencyKeyRepositories: idempotencyKeyRepositories,
+		userRepositories:           userRepositories,
 		conf:                       conf,
 	}
 }
@@ -88,4 +93,42 @@ func (u usecase) getOrCreateTask(ctx context.Context, r dtos.CreateTaskRequest) 
 	}
 
 	return task, nil
+}
+
+func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error) {
+	tx, ctx, err := u.txManager.Begin(ctx)
+	if err != nil {
+		return dtos.AssignTaskResponse{}, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	assignee, err := u.userRepositories.GetUserByID(ctx, r.AssigneeID)
+	if err != nil {
+		return dtos.AssignTaskResponse{}, err
+	}
+
+	user, err := u.userRepositories.GetUserByID(ctx, r.UserAuth.ID)
+	if err != nil {
+		return dtos.AssignTaskResponse{}, err
+	}
+
+	if user.TeamID != assignee.TeamID {
+		return dtos.AssignTaskResponse{}, consts.ErrDifferentTeam
+	}
+
+	t, err := u.taskRepositories.AssignTaskByID(ctx, r.ID, r.AssigneeID)
+	if err != nil {
+		return dtos.AssignTaskResponse{}, err
+	}
+
+	// send notification
+
+	tx.Commit(ctx)
+
+	return dtos.AssignTaskResponse{
+		ID:         t.ID,
+		UserID:     t.UserID,
+		AssigneeID: *t.AssigneeID,
+	}, nil
 }

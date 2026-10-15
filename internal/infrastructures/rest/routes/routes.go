@@ -32,4 +32,5 @@ func (r Routes) Register(ge *gin.Engine) {
 
 	task := ge.Group("/tasks")
 	task.POST("", r.middlewares.VerifyToken(), r.taskController.CreateTask)
+	task.POST("/:id/assign", r.middlewares.VerifyToken(), r.taskController.AssignTask)
 }
