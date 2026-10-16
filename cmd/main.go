@@ -23,6 +23,8 @@ import (
 	"github.com/naufalfmm/gdc-task-management/internal/infrastructures/rest/routes"
 	"github.com/naufalfmm/gdc-task-management/internal/middlewares"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/authtoken/jwt"
+	"github.com/naufalfmm/gdc-task-management/internal/pkg/logger/slog"
+	"github.com/naufalfmm/gdc-task-management/internal/pkg/notification/dummy"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/password/bcrypt"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager/pgx"
 	v10 "github.com/naufalfmm/gdc-task-management/internal/pkg/validator/v10"
@@ -48,6 +50,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	logger := slog.New()
+	notif := dummy.NewDummyNotification(logger)
 
 	ctx := context.Background()
 	dbpool, err := pgxpool.New(ctx, conf.GetDSN())
@@ -75,7 +80,7 @@ func main() {
 	pgxtxmanager := pgx.NewPgxTxManager(dbpool)
 
 	authUsecase := authusc.NewAuthUsecase(pgxtxmanager, teamRepositories, userRepositories, passHasher, jwtoken)
-	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, taskRepositories, idempotencyKeyRepositories, userRepositories, *conf)
+	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, *conf)
 
 	middleware := middlewares.NewMiddleware(jwtoken)
 	authControllers := authctrl.NewAuthController(authUsecase)

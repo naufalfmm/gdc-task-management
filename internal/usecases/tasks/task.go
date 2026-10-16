@@ -8,6 +8,7 @@ import (
 	"github.com/naufalfmm/gdc-task-management/internal/consts"
 	"github.com/naufalfmm/gdc-task-management/internal/models/daos"
 	"github.com/naufalfmm/gdc-task-management/internal/models/dtos"
+	"github.com/naufalfmm/gdc-task-management/internal/pkg/notification"
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
@@ -20,7 +21,9 @@ type Usecase interface {
 }
 
 type usecase struct {
-	txManager                  txmanager.TxManager
+	txManager    txmanager.TxManager
+	notification notification.Notification
+
 	taskRepositories           tasks.Repository
 	idempotencyKeyRepositories idempotencykeys.Repository
 	userRepositories           users.Repository
@@ -28,9 +31,10 @@ type usecase struct {
 	conf config.Config
 }
 
-func NewTaskUsecase(txManager txmanager.TxManager, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, conf config.Config) Usecase {
+func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, conf config.Config) Usecase {
 	return &usecase{
 		txManager:                  txManager,
+		notification:               notification,
 		taskRepositories:           taskRepositories,
 		idempotencyKeyRepositories: idempotencyKeyRepositories,
 		userRepositories:           userRepositories,
@@ -122,13 +126,18 @@ func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos
 		return dtos.AssignTaskResponse{}, err
 	}
 
-	// send notification
-
-	tx.Commit(ctx)
-
-	return dtos.AssignTaskResponse{
+	resp := dtos.AssignTaskResponse{
 		ID:         t.ID,
 		UserID:     t.UserID,
 		AssigneeID: *t.AssigneeID,
-	}, nil
+	}
+
+	// send notification
+	if err := u.notification.Send(ctx, "Assign Task", resp); err != nil {
+		return dtos.AssignTaskResponse{}, err
+	}
+
+	tx.Commit(ctx)
+
+	return resp, nil
 }

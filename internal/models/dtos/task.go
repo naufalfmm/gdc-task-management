@@ -1,6 +1,7 @@
 package dtos
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -77,4 +78,8 @@ type AssignTaskResponse struct {
 	ID         int64 `json:"id"`
 	UserID     int64 `json:"user_id"`
 	AssigneeID int64 `json:"assignee_id"`
+}
+
+func (r AssignTaskResponse) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r)
 }
