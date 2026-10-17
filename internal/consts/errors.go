@@ -12,6 +12,8 @@ var (
 		return fmt.Errorf("invalid param %s", key)
 	}
 
+	ErrInvalidTeam = errors.New("invalid team")
+
 	ErrDifferentTeam         error = errors.New("user and assignee don't have the same team")
 	ErrMissingIdempotencyKey error = errors.New("idempotency key is missing")
 
@@ -25,6 +27,8 @@ var (
 
 	ErrorCodeWrongPassword int = 401001
 	ErrorCodeInvalidToken  int = 401002
+
+	ErrorCodeInvalidTeam int = 403001
 
 	ErrorCodeInternalError int = 500000
 	ErrorCodePanicRecover  int = 500999

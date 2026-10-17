@@ -83,3 +83,39 @@ type AssignTaskResponse struct {
 func (r AssignTaskResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r)
 }
+
+type GetTaskDetailRequest struct {
+	ID       int64    `json:"-"`
+	UserAuth UserAuth `json:"-"`
+}
+
+func (r *GetTaskDetailRequest) FromGinContext(gc *gin.Context) error {
+	paramID := gc.Param("id")
+	if paramID == "" {
+		return consts.ErrInvalidParam("id")
+	}
+
+	id, err := strconv.ParseInt(paramID, 10, 64)
+	if err != nil {
+		return consts.ErrInvalidParam("id")
+	}
+
+	r.ID = id
+
+	userHeader, _ := gc.Get(consts.XUserHeader)
+	r.UserAuth = userHeader.(UserAuth)
+
+	return nil
+}
+
+type GetTaskDetailResponse struct {
+	ID          int64      `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	UserID      int64      `json:"user_id"`
+	TeamID      int64      `json:"team_id"`
+	AssigneeID  *int64     `json:"assignee_id"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at"`
+}

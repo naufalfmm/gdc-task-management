@@ -18,6 +18,7 @@ import (
 type Usecase interface {
 	CreateTask(ctx context.Context, r dtos.CreateTaskRequest) (dtos.CreateTaskResponse, error)
 	AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error)
+	GetTaskByID(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error)
 }
 
 type usecase struct {
@@ -77,11 +78,17 @@ func (u usecase) getOrCreateTask(ctx context.Context, r dtos.CreateTaskRequest) 
 		return task, nil
 	}
 
+	creator, err := u.userRepositories.GetUserByID(ctx, r.UserAuth.ID)
+	if err != nil {
+		return daos.Task{}, err
+	}
+
 	task, err := u.taskRepositories.CreateTask(ctx, daos.Task{
 		Title:       r.Title,
 		Description: r.Description,
 		Status:      daos.TaskStatusToDo,
 		UserID:      r.UserAuth.ID,
+		TeamID:      creator.TeamID,
 	})
 	if err != nil {
 		return daos.Task{}, err
@@ -140,4 +147,32 @@ func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos
 	tx.Commit(ctx)
 
 	return resp, nil
+}
+
+func (u usecase) GetTaskByID(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error) {
+	task, err := u.taskRepositories.GetTaskByID(ctx, r.ID)
+	if err != nil {
+		return dtos.GetTaskDetailResponse{}, err
+	}
+
+	user, err := u.userRepositories.GetUserByID(ctx, r.UserAuth.ID)
+	if err != nil {
+		return dtos.GetTaskDetailResponse{}, err
+	}
+
+	if task.TeamID != user.TeamID {
+		return dtos.GetTaskDetailResponse{}, consts.ErrInvalidTeam
+	}
+
+	return dtos.GetTaskDetailResponse{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+		Status:      task.Status,
+		UserID:      task.UserID,
+		TeamID:      task.TeamID,
+		AssigneeID:  task.AssigneeID,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
+	}, nil
 }

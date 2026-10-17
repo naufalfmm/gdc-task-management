@@ -18,11 +18,12 @@ type IdempotencyKey struct {
 
 type Task struct {
 	ID          int64            `json:"id"`
+	UserID      pgtype.Int8      `json:"user_id"`
+	TeamID      pgtype.Int8      `json:"team_id"`
+	AssigneeID  pgtype.Int8      `json:"assignee_id"`
 	Title       string           `json:"title"`
 	Description pgtype.Text      `json:"description"`
 	Status      string           `json:"status"`
-	UserID      pgtype.Int8      `json:"user_id"`
-	AssigneeID  pgtype.Int8      `json:"assignee_id"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 }

@@ -120,3 +120,59 @@ func (c Controller) buildErrorForAssignTask(gc *gin.Context, err error) {
 		},
 	})
 }
+
+func (c Controller) GetTaskDetail(gc *gin.Context) {
+	var req dtos.GetTaskDetailRequest
+	if err := req.FromGinContext(gc); err != nil {
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeBadRequest,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+
+		return
+	}
+
+	resp, err := c.taskUsecase.GetTaskByID(gc.Request.Context(), req)
+	if err != nil {
+		c.buildErrorForAssignTask(gc, err)
+		return
+	}
+
+	gc.JSON(http.StatusOK, dtos.Response[dtos.GetTaskDetailResponse]{
+		Status:    true,
+		Message:   "Success",
+		Timestamp: time.Now(),
+		Data:      resp,
+	})
+}
+
+func (c Controller) buildErrorForGetTaskDetail(gc *gin.Context, err error) {
+	statusCode := http.StatusInternalServerError
+
+	if errors.Is(err, consts.ErrInvalidTeam) {
+		gc.JSON(http.StatusForbidden, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeInvalidTeam,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+	}
+
+	gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
+		Status:    false,
+		Code:      consts.ErrorCodeInternalError,
+		Message:   consts.ErrDefaultError.Error(),
+		Timestamp: time.Now(),
+		Data: dtos.ErrorResponse{
+			Error: consts.ErrDefaultError,
+		},
+	})
+}

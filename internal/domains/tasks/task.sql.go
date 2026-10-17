@@ -16,7 +16,7 @@ UPDATE tasks
 SET assignee_id = $1,
     updated_at = NOW()
 WHERE id = $2
-RETURNING id, title, description, status, user_id, assignee_id, created_at, updated_at
+RETURNING id, user_id, team_id, assignee_id, title, description, status, created_at, updated_at
 `
 
 type AssignTaskParams struct {
@@ -29,11 +29,12 @@ func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (Task, e
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
 		&i.Title,
 		&i.Description,
 		&i.Status,
-		&i.UserID,
-		&i.AssigneeID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -43,7 +44,7 @@ func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (Task, e
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks (title, description, status, user_id, assignee_id)
 VALUES($1, $2, $3, $4, $5)
-RETURNING id, title, description, status, user_id, assignee_id, created_at, updated_at
+RETURNING id, user_id, team_id, assignee_id, title, description, status, created_at, updated_at
 `
 
 type CreateTaskParams struct {
@@ -65,11 +66,12 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
 		&i.Title,
 		&i.Description,
 		&i.Status,
-		&i.UserID,
-		&i.AssigneeID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -77,7 +79,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 }
 
 const getTaskByID = `-- name: GetTaskByID :one
-SELECT id, title, description, status, user_id, assignee_id, created_at, updated_at
+SELECT id, user_id, team_id, assignee_id, title, description, status, created_at, updated_at
 FROM tasks
 WHERE id = $1
 FOR UPDATE
@@ -88,11 +90,12 @@ func (q *Queries) GetTaskByID(ctx context.Context, id int64) (Task, error) {
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
 		&i.Title,
 		&i.Description,
 		&i.Status,
-		&i.UserID,
-		&i.AssigneeID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
