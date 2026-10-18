@@ -37,7 +37,7 @@ func (r *CreateTaskRequest) FromGinContext(gc *gin.Context) error {
 }
 
 type CreateTaskResponse struct {
-	ID          int64     `json:"id"`
+	Code        string    `json:"code"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Status      string    `json:"status"`
@@ -75,9 +75,9 @@ func (r *AssignTaskRequest) FromGinContext(gc *gin.Context) error {
 }
 
 type AssignTaskResponse struct {
-	ID         int64 `json:"id"`
-	UserID     int64 `json:"user_id"`
-	AssigneeID int64 `json:"assignee_id"`
+	Code       string `json:"code"`
+	UserID     int64  `json:"user_id"`
+	AssigneeID int64  `json:"assignee_id"`
 }
 
 func (r AssignTaskResponse) MarshalJSON() ([]byte, error) {
@@ -85,22 +85,15 @@ func (r AssignTaskResponse) MarshalJSON() ([]byte, error) {
 }
 
 type GetTaskDetailRequest struct {
-	ID       int64    `json:"-"`
+	Code     string   `json:"-"`
 	UserAuth UserAuth `json:"-"`
 }
 
 func (r *GetTaskDetailRequest) FromGinContext(gc *gin.Context) error {
-	paramID := gc.Param("id")
-	if paramID == "" {
-		return consts.ErrInvalidParam("id")
+	r.Code = gc.Param("code")
+	if r.Code == "" {
+		return consts.ErrInvalidParam("code")
 	}
-
-	id, err := strconv.ParseInt(paramID, 10, 64)
-	if err != nil {
-		return consts.ErrInvalidParam("id")
-	}
-
-	r.ID = id
 
 	userHeader, _ := gc.Get(consts.XUserHeader)
 	r.UserAuth = userHeader.(UserAuth)
@@ -109,7 +102,7 @@ func (r *GetTaskDetailRequest) FromGinContext(gc *gin.Context) error {
 }
 
 type GetTaskDetailResponse struct {
-	ID          int64      `json:"id"`
+	Code        string     `json:"code"`
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Status      string     `json:"status"`

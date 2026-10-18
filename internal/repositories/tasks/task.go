@@ -13,7 +13,9 @@ import (
 type Repository interface {
 	CreateTask(ctx context.Context, task daos.Task) (daos.Task, error)
 	GetTaskByID(ctx context.Context, id int64) (daos.Task, error)
+	GetTaskByCode(ctx context.Context, code string) (daos.Task, error)
 	AssignTaskByID(ctx context.Context, id int64, assigneeID int64) (daos.Task, error)
+	GetLatestActiveTeamTask(ctx context.Context, teamID int64) (daos.Task, error)
 }
 
 type repository struct {
@@ -24,6 +26,32 @@ func NewRepository(querier tasks.Querier) Repository {
 	return &repository{
 		querier: querier,
 	}
+}
+
+func newDaoTask(t tasks.Task) daos.Task {
+	task := daos.Task{
+		ID:          t.ID,
+		Code:        t.Code,
+		Title:       t.Title,
+		Description: t.Description.String,
+		Status:      t.Status,
+		UserID:      t.UserID.Int64,
+		CreatedAt:   t.CreatedAt.Time,
+	}
+
+	if t.AssigneeID.Valid {
+		task.AssigneeID = &t.AssigneeID.Int64
+	}
+
+	if t.UpdatedAt.Valid {
+		task.UpdatedAt = &t.UpdatedAt.Time
+	}
+
+	if t.DeletedAt.Valid {
+		task.DeletedAt = &t.DeletedAt.Time
+	}
+
+	return task
 }
 
 func (r *repository) CreateTask(ctx context.Context, task daos.Task) (daos.Task, error) {
@@ -62,24 +90,7 @@ func (r *repository) CreateTask(ctx context.Context, task daos.Task) (daos.Task,
 		return daos.Task{}, nil
 	}
 
-	createdTask := daos.Task{
-		ID:          t.ID,
-		Title:       t.Title,
-		Description: t.Description.String,
-		Status:      t.Status,
-		UserID:      t.UserID.Int64,
-		CreatedAt:   t.CreatedAt.Time,
-	}
-
-	if t.AssigneeID.Valid {
-		createdTask.AssigneeID = &t.AssigneeID.Int64
-	}
-
-	if t.UpdatedAt.Valid {
-		createdTask.UpdatedAt = &t.UpdatedAt.Time
-	}
-
-	return createdTask, nil
+	return newDaoTask(t), nil
 }
 
 func (r *repository) GetTaskByID(ctx context.Context, id int64) (daos.Task, error) {
@@ -95,24 +106,23 @@ func (r *repository) GetTaskByID(ctx context.Context, id int64) (daos.Task, erro
 		return daos.Task{}, err
 	}
 
-	task := daos.Task{
-		ID:          t.ID,
-		Title:       t.Title,
-		Description: t.Description.String,
-		Status:      t.Status,
-		UserID:      t.UserID.Int64,
-		CreatedAt:   t.CreatedAt.Time,
+	return newDaoTask(t), nil
+}
+
+func (r *repository) GetTaskByCode(ctx context.Context, code string) (daos.Task, error) {
+	q := r.querier
+
+	tx, ok := txmanager.ExtractTx[pgx.Tx](ctx)
+	if ok {
+		q = tasks.New(tx)
 	}
 
-	if t.AssigneeID.Valid {
-		task.AssigneeID = &t.AssigneeID.Int64
+	t, err := q.GetTaskByCode(ctx, code)
+	if err != nil {
+		return daos.Task{}, err
 	}
 
-	if t.UpdatedAt.Valid {
-		task.UpdatedAt = &t.UpdatedAt.Time
-	}
-
-	return task, nil
+	return newDaoTask(t), nil
 }
 
 func (r *repository) AssignTaskByID(ctx context.Context, id int64, assigneeID int64) (daos.Task, error) {
@@ -134,22 +144,21 @@ func (r *repository) AssignTaskByID(ctx context.Context, id int64, assigneeID in
 		return daos.Task{}, err
 	}
 
-	task := daos.Task{
-		ID:          t.ID,
-		Title:       t.Title,
-		Description: t.Description.String,
-		Status:      t.Status,
-		UserID:      t.UserID.Int64,
-		CreatedAt:   t.CreatedAt.Time,
+	return newDaoTask(t), nil
+}
+
+func (r *repository) GetLatestActiveTeamTask(ctx context.Context, teamID int64) (daos.Task, error) {
+	q := r.querier
+
+	tx, ok := txmanager.ExtractTx[pgx.Tx](ctx)
+	if ok {
+		q = tasks.New(tx)
 	}
 
-	if t.AssigneeID.Valid {
-		task.AssigneeID = &t.AssigneeID.Int64
+	t, err := q.GetLatestActiveTeamTask(ctx, pgtype.Int8{Int64: teamID, Valid: true})
+	if err != nil {
+		return daos.Task{}, err
 	}
 
-	if t.UpdatedAt.Valid {
-		task.UpdatedAt = &t.UpdatedAt.Time
-	}
-
-	return task, nil
+	return newDaoTask(t), nil
 }

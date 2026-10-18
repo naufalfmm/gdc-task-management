@@ -6,11 +6,15 @@ package tasks
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	AssignTask(ctx context.Context, arg AssignTaskParams) (Task, error)
 	CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error)
+	GetLatestActiveTeamTask(ctx context.Context, teamID pgtype.Int8) (Task, error)
+	GetTaskByCode(ctx context.Context, code string) (Task, error)
 	GetTaskByID(ctx context.Context, id int64) (Task, error)
 }
 

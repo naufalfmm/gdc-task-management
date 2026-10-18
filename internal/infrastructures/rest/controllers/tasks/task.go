@@ -137,7 +137,7 @@ func (c Controller) GetTaskDetail(gc *gin.Context) {
 		return
 	}
 
-	resp, err := c.taskUsecase.GetTaskByID(gc.Request.Context(), req)
+	resp, err := c.taskUsecase.GetTaskDetail(gc.Request.Context(), req)
 	if err != nil {
 		c.buildErrorForAssignTask(gc, err)
 		return

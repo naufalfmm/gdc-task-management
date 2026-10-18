@@ -18,6 +18,7 @@ type IdempotencyKey struct {
 
 type Task struct {
 	ID          int64            `json:"id"`
+	Code        string           `json:"code"`
 	UserID      pgtype.Int8      `json:"user_id"`
 	TeamID      pgtype.Int8      `json:"team_id"`
 	AssigneeID  pgtype.Int8      `json:"assignee_id"`
@@ -26,6 +27,7 @@ type Task struct {
 	Status      string           `json:"status"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
 }
 
 type TaskLog struct {
@@ -39,6 +41,7 @@ type TaskLog struct {
 
 type Team struct {
 	ID        int64            `json:"id"`
+	Code      string           `json:"code"`
 	Name      string           `json:"name"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`

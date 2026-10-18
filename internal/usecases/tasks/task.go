@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/naufalfmm/gdc-task-management/config"
@@ -12,13 +13,14 @@ import (
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
+	"github.com/naufalfmm/gdc-task-management/internal/repositories/teams"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/users"
 )
 
 type Usecase interface {
 	CreateTask(ctx context.Context, r dtos.CreateTaskRequest) (dtos.CreateTaskResponse, error)
 	AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error)
-	GetTaskByID(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error)
+	GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error)
 }
 
 type usecase struct {
@@ -28,18 +30,22 @@ type usecase struct {
 	taskRepositories           tasks.Repository
 	idempotencyKeyRepositories idempotencykeys.Repository
 	userRepositories           users.Repository
+	teamRepositories           teams.Repository
 
 	conf config.Config
 }
 
-func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, conf config.Config) Usecase {
+func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, teamRepositories teams.Repository, conf config.Config) Usecase {
 	return &usecase{
-		txManager:                  txManager,
-		notification:               notification,
+		txManager:    txManager,
+		notification: notification,
+
 		taskRepositories:           taskRepositories,
 		idempotencyKeyRepositories: idempotencyKeyRepositories,
 		userRepositories:           userRepositories,
-		conf:                       conf,
+		teamRepositories:           teamRepositories,
+
+		conf: conf,
 	}
 }
 
@@ -59,7 +65,7 @@ func (u usecase) CreateTask(ctx context.Context, r dtos.CreateTaskRequest) (dtos
 	tx.Commit(ctx)
 
 	return dtos.CreateTaskResponse{
-		ID:          task.ID,
+		Code:        task.Code,
 		Title:       task.Title,
 		Description: task.Description,
 		Status:      task.Status,
@@ -83,8 +89,14 @@ func (u usecase) getOrCreateTask(ctx context.Context, r dtos.CreateTaskRequest) 
 		return daos.Task{}, err
 	}
 
+	taskCode, err := u.generateTeamCode(ctx, creator.TeamID)
+	if err != nil {
+		return daos.Task{}, err
+	}
+
 	task, err := u.taskRepositories.CreateTask(ctx, daos.Task{
 		Title:       r.Title,
+		Code:        taskCode,
 		Description: r.Description,
 		Status:      daos.TaskStatusToDo,
 		UserID:      r.UserAuth.ID,
@@ -104,6 +116,22 @@ func (u usecase) getOrCreateTask(ctx context.Context, r dtos.CreateTaskRequest) 
 	}
 
 	return task, nil
+}
+
+func (u usecase) generateTeamCode(ctx context.Context, teamID int64) (string, error) {
+	latestTask, err := u.taskRepositories.GetLatestActiveTeamTask(ctx, teamID)
+	if err != nil {
+		return "", err
+	}
+
+	team, err := u.teamRepositories.GetTeamByID(ctx, teamID)
+	if err != nil {
+		return "", err
+	}
+
+	_, latestTaskNumber := latestTask.SplitCode()
+
+	return fmt.Sprintf("%s-%d", team.Code, latestTaskNumber+1), nil
 }
 
 func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error) {
@@ -134,7 +162,7 @@ func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos
 	}
 
 	resp := dtos.AssignTaskResponse{
-		ID:         t.ID,
+		Code:       t.Code,
 		UserID:     t.UserID,
 		AssigneeID: *t.AssigneeID,
 	}
@@ -149,8 +177,8 @@ func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos
 	return resp, nil
 }
 
-func (u usecase) GetTaskByID(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error) {
-	task, err := u.taskRepositories.GetTaskByID(ctx, r.ID)
+func (u usecase) GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error) {
+	task, err := u.taskRepositories.GetTaskByCode(ctx, r.Code)
 	if err != nil {
 		return dtos.GetTaskDetailResponse{}, err
 	}
@@ -165,7 +193,7 @@ func (u usecase) GetTaskByID(ctx context.Context, r dtos.GetTaskDetailRequest) (
 	}
 
 	return dtos.GetTaskDetailResponse{
-		ID:          task.ID,
+		Code:        task.Code,
 		Title:       task.Title,
 		Description: task.Description,
 		Status:      task.Status,

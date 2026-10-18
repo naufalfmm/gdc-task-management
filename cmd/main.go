@@ -80,7 +80,7 @@ func main() {
 	pgxtxmanager := pgx.NewPgxTxManager(dbpool)
 
 	authUsecase := authusc.NewAuthUsecase(pgxtxmanager, teamRepositories, userRepositories, passHasher, jwtoken)
-	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, *conf)
+	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, teamRepositories, *conf)
 
 	middleware := middlewares.NewMiddleware(jwtoken)
 	authControllers := authctrl.NewAuthController(authUsecase)

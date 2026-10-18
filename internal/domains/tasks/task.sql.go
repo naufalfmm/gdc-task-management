@@ -16,7 +16,8 @@ UPDATE tasks
 SET assignee_id = $1,
     updated_at = NOW()
 WHERE id = $2
-RETURNING id, user_id, team_id, assignee_id, title, description, status, created_at, updated_at
+    AND deleted_at IS NULL
+RETURNING id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
 `
 
 type AssignTaskParams struct {
@@ -29,6 +30,7 @@ func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (Task, e
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.Code,
 		&i.UserID,
 		&i.TeamID,
 		&i.AssigneeID,
@@ -37,6 +39,7 @@ func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (Task, e
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -44,7 +47,7 @@ func (q *Queries) AssignTask(ctx context.Context, arg AssignTaskParams) (Task, e
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks (title, description, status, user_id, assignee_id)
 VALUES($1, $2, $3, $4, $5)
-RETURNING id, user_id, team_id, assignee_id, title, description, status, created_at, updated_at
+RETURNING id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
 `
 
 type CreateTaskParams struct {
@@ -66,6 +69,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.Code,
 		&i.UserID,
 		&i.TeamID,
 		&i.AssigneeID,
@@ -74,14 +78,72 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getLatestActiveTeamTask = `-- name: GetLatestActiveTeamTask :one
+SELECT id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
+FROM tasks
+WHERE team_id = $1
+    AND deleted_at IS NULL
+ORDER BY id DESC
+LIMIT 1
+FOR UPDATE
+`
+
+func (q *Queries) GetLatestActiveTeamTask(ctx context.Context, teamID pgtype.Int8) (Task, error) {
+	row := q.db.QueryRow(ctx, getLatestActiveTeamTask, teamID)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getTaskByCode = `-- name: GetTaskByCode :one
+SELECT id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
+FROM tasks
+WHERE code = $1
+    AND deleted_at IS NULL
+FOR UPDATE
+`
+
+func (q *Queries) GetTaskByCode(ctx context.Context, code string) (Task, error) {
+	row := q.db.QueryRow(ctx, getTaskByCode, code)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getTaskByID = `-- name: GetTaskByID :one
-SELECT id, user_id, team_id, assignee_id, title, description, status, created_at, updated_at
+SELECT id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
 FROM tasks
 WHERE id = $1
+    AND deleted_at IS NULL
 FOR UPDATE
 `
 
@@ -90,6 +152,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, id int64) (Task, error) {
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.Code,
 		&i.UserID,
 		&i.TeamID,
 		&i.AssigneeID,
@@ -98,6 +161,7 @@ func (q *Queries) GetTaskByID(ctx context.Context, id int64) (Task, error) {
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }

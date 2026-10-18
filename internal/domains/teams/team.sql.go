@@ -10,7 +10,7 @@ import (
 )
 
 const getTeamByID = `-- name: GetTeamByID :one
-SELECT id, name, created_at, updated_at FROM teams WHERE id = $1
+SELECT id, code, name, created_at, updated_at FROM teams WHERE id = $1
 `
 
 func (q *Queries) GetTeamByID(ctx context.Context, id int64) (Team, error) {
@@ -18,6 +18,7 @@ func (q *Queries) GetTeamByID(ctx context.Context, id int64) (Team, error) {
 	var i Team
 	err := row.Scan(
 		&i.ID,
+		&i.Code,
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -26,7 +27,7 @@ func (q *Queries) GetTeamByID(ctx context.Context, id int64) (Team, error) {
 }
 
 const getTeamByName = `-- name: GetTeamByName :one
-SELECT id, name, created_at, updated_at FROM teams WHERE name = $1
+SELECT id, code, name, created_at, updated_at FROM teams WHERE name = $1
 `
 
 func (q *Queries) GetTeamByName(ctx context.Context, name string) (Team, error) {
@@ -34,6 +35,7 @@ func (q *Queries) GetTeamByName(ctx context.Context, name string) (Team, error) 
 	var i Team
 	err := row.Scan(
 		&i.ID,
+		&i.Code,
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -45,7 +47,7 @@ const insertTeam = `-- name: InsertTeam :one
 INSERT INTO teams (name)
 VALUES ($1)
 ON CONFLICT (name) DO NOTHING
-RETURNING id, name, created_at, updated_at
+RETURNING id, code, name, created_at, updated_at
 `
 
 func (q *Queries) InsertTeam(ctx context.Context, name string) (Team, error) {
@@ -53,6 +55,7 @@ func (q *Queries) InsertTeam(ctx context.Context, name string) (Team, error) {
 	var i Team
 	err := row.Scan(
 		&i.ID,
+		&i.Code,
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
