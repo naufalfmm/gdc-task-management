@@ -16,6 +16,7 @@ import (
 	"github.com/naufalfmm/gdc-task-management/config"
 	"github.com/naufalfmm/gdc-task-management/internal/domains/idempotencykeys"
 	"github.com/naufalfmm/gdc-task-management/internal/domains/tasks"
+	teamenumdomain "github.com/naufalfmm/gdc-task-management/internal/domains/teamenums"
 	teamdomain "github.com/naufalfmm/gdc-task-management/internal/domains/teams"
 	userdomain "github.com/naufalfmm/gdc-task-management/internal/domains/users"
 	authctrl "github.com/naufalfmm/gdc-task-management/internal/infrastructures/rest/controllers/auth"
@@ -30,6 +31,7 @@ import (
 	v10 "github.com/naufalfmm/gdc-task-management/internal/pkg/validator/v10"
 	idemkeyrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
 	taskrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
+	teamenumrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/teamenums"
 	teamrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/teams"
 	userrepo "github.com/naufalfmm/gdc-task-management/internal/repositories/users"
 	authusc "github.com/naufalfmm/gdc-task-management/internal/usecases/auth"
@@ -68,6 +70,9 @@ func main() {
 	teamQuerier := teamdomain.New(dbpool)
 	teamRepositories := teamrepo.NewRepository(teamQuerier)
 
+	teamEnumQuerier := teamenumdomain.New(dbpool)
+	teamEnumRepositories := teamenumrepo.NewRepository(teamEnumQuerier)
+
 	userQuerier := userdomain.New(dbpool)
 	userRepositories := userrepo.NewRepository(userQuerier)
 
@@ -80,7 +85,7 @@ func main() {
 	pgxtxmanager := pgx.NewPgxTxManager(dbpool)
 
 	authUsecase := authusc.NewAuthUsecase(pgxtxmanager, teamRepositories, userRepositories, passHasher, jwtoken)
-	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, teamRepositories, *conf)
+	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, teamRepositories, teamEnumRepositories, *conf)
 
 	middleware := middlewares.NewMiddleware(jwtoken)
 	authControllers := authctrl.NewAuthController(authUsecase)
