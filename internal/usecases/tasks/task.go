@@ -13,6 +13,7 @@ import (
 	"github.com/naufalfmm/gdc-task-management/internal/pkg/txmanager"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/idempotencykeys"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/tasks"
+	"github.com/naufalfmm/gdc-task-management/internal/repositories/teamenums"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/teams"
 	"github.com/naufalfmm/gdc-task-management/internal/repositories/users"
 )
@@ -31,11 +32,12 @@ type usecase struct {
 	idempotencyKeyRepositories idempotencykeys.Repository
 	userRepositories           users.Repository
 	teamRepositories           teams.Repository
+	teamEnumRepositories       teamenums.Repository
 
 	conf config.Config
 }
 
-func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, teamRepositories teams.Repository, conf config.Config) Usecase {
+func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, teamRepositories teams.Repository, teamEnumRepositories teamenums.Repository, conf config.Config) Usecase {
 	return &usecase{
 		txManager:    txManager,
 		notification: notification,
@@ -44,6 +46,7 @@ func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Not
 		idempotencyKeyRepositories: idempotencyKeyRepositories,
 		userRepositories:           userRepositories,
 		teamRepositories:           teamRepositories,
+		teamEnumRepositories:       teamEnumRepositories,
 
 		conf: conf,
 	}
@@ -94,11 +97,21 @@ func (u usecase) getOrCreateTask(ctx context.Context, r dtos.CreateTaskRequest) 
 		return daos.Task{}, err
 	}
 
+	taskStatus, err := u.teamEnumRepositories.GetTeamEnum(ctx, creator.TeamID, "TASK_STATUS")
+	if err != nil {
+		return daos.Task{}, err
+	}
+
+	status := taskStatus.DefaultDatum
+	if status == nil {
+		status = &taskStatus.Data[0]
+	}
+
 	task, err := u.taskRepositories.CreateTask(ctx, daos.Task{
 		Title:       r.Title,
 		Code:        taskCode,
 		Description: r.Description,
-		Status:      daos.TaskStatusToDo,
+		Status:      *status,
 		UserID:      r.UserAuth.ID,
 		TeamID:      creator.TeamID,
 	})

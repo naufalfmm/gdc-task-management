@@ -47,6 +47,16 @@ type Team struct {
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
+type TeamEnum struct {
+	ID           int64            `json:"id"`
+	TeamID       pgtype.Int8      `json:"team_id"`
+	Enum         string           `json:"enum"`
+	Data         []string         `json:"data"`
+	DefaultDatum pgtype.Text      `json:"default_datum"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+}
+
 type User struct {
 	ID           int64            `json:"id"`
 	Email        string           `json:"email"`

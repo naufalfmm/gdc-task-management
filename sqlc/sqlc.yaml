@@ -50,4 +50,14 @@ sql:
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_interface: true
+  - engine: "postgresql"
+    schema: "schema.sql"
+    queries: "../internal/domains/teamenums"
+    gen:
+      go:
+        package: "teamenums"
+        out: "../internal/domains/teamenums"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
   
