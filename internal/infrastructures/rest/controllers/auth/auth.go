@@ -15,7 +15,7 @@ type Controller struct {
 	authUsecase auth.Usecase
 }
 
-func NewAuthController(authUsecase auth.Usecase) Controller {
+func NewController(authUsecase auth.Usecase) Controller {
 	return Controller{
 		authUsecase: authUsecase,
 	}

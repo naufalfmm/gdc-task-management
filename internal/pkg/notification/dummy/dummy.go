@@ -15,8 +15,8 @@ type dummyNotification struct {
 	logger logger.Logger
 }
 
-func NewDummyNotification(logger logger.Logger) dummyNotification {
-	return dummyNotification{
+func NewDummyNotification(logger logger.Logger) notification.Notification {
+	return &dummyNotification{
 		logger: logger,
 	}
 }

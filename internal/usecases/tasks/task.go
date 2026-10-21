@@ -37,7 +37,7 @@ type usecase struct {
 	conf config.Config
 }
 
-func NewTaskUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, teamRepositories teams.Repository, teamEnumRepositories teamenums.Repository, conf config.Config) Usecase {
+func NewUsecase(txManager txmanager.TxManager, notification notification.Notification, taskRepositories tasks.Repository, idempotencyKeyRepositories idempotencykeys.Repository, userRepositories users.Repository, teamRepositories teams.Repository, teamEnumRepositories teamenums.Repository, conf config.Config) Usecase {
 	return &usecase{
 		txManager:    txManager,
 		notification: notification,

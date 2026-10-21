@@ -46,7 +46,7 @@ func main() {
 		panic(err)
 	}
 
-	passHasher := bcrypt.NewBcryptHasher(conf.BcryptCost)
+	passHasher := bcrypt.NewBcrypt(conf.BcryptCost)
 	jwtoken := jwt.NewJWT(conf.JwtPrivateKey, conf.JwtPublicKey, conf.JwtAlgorithm, conf.JwtAccessTokenExpiration, conf.JwtRefreshTokenExpiration)
 	validator, err := v10.NewV10()
 	if err != nil {
@@ -84,13 +84,13 @@ func main() {
 
 	pgxtxmanager := pgx.NewPgxTxManager(dbpool)
 
-	authUsecase := authusc.NewAuthUsecase(pgxtxmanager, teamRepositories, userRepositories, passHasher, jwtoken)
-	taskUsecase := taskusc.NewTaskUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, teamRepositories, teamEnumRepositories, *conf)
+	authUsecase := authusc.NewUsecase(pgxtxmanager, teamRepositories, userRepositories, passHasher, jwtoken)
+	taskUsecase := taskusc.NewUsecase(pgxtxmanager, notif, taskRepositories, idempotencyKeyRepositories, userRepositories, teamRepositories, teamEnumRepositories, *conf)
 
 	middleware := middlewares.NewMiddleware(jwtoken)
-	authControllers := authctrl.NewAuthController(authUsecase)
+	authControllers := authctrl.NewController(authUsecase)
 
-	taskControllers := taskctrl.NewTaskController(taskUsecase)
+	taskControllers := taskctrl.NewController(taskUsecase)
 
 	routes := routes.NewRoutes(authControllers, taskControllers, middleware)
 	routes.Register(ge)

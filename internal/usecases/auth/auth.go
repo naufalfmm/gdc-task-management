@@ -29,7 +29,7 @@ type usecase struct {
 	authToken      authtoken.AuthToken
 }
 
-func NewAuthUsecase(txManager txmanager.TxManager, teamRepositories teams.Repository, userRepositories users.Repository, passwordHasher password.PasswordHasher, authToken authtoken.AuthToken) Usecase {
+func NewUsecase(txManager txmanager.TxManager, teamRepositories teams.Repository, userRepositories users.Repository, passwordHasher password.PasswordHasher, authToken authtoken.AuthToken) Usecase {
 	return &usecase{
 		txManager:        txManager,
 		teamRepositories: teamRepositories,

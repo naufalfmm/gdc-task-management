@@ -15,7 +15,7 @@ type Controller struct {
 	taskUsecase tasks.Usecase
 }
 
-func NewTaskController(taskUsecase tasks.Usecase) Controller {
+func NewController(taskUsecase tasks.Usecase) Controller {
 	return Controller{
 		taskUsecase: taskUsecase,
 	}

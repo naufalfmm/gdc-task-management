@@ -12,8 +12,8 @@ type slogLogger struct {
 	log *slog.Logger
 }
 
-func New() slogLogger {
-	return slogLogger{
+func New() logger.Logger {
+	return &slogLogger{
 		log: slog.New(slog.NewJSONHandler(os.Stdout, nil)),
 	}
 }
