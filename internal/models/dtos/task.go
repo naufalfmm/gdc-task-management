@@ -117,4 +117,36 @@ type UpdateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Status      string `json:"status"`
+
+	Code     string   `json:"-"`
+	UserAuth UserAuth `json:"-"`
+}
+
+func (r *UpdateTaskRequest) FromGinContext(gc *gin.Context) error {
+	if err := gc.ShouldBindJSON(r); err != nil {
+		return errors.GenerateError(*r, err)
+	}
+
+	r.Code = gc.Param("code")
+	if r.Code == "" {
+		return consts.ErrInvalidParam("code")
+	}
+
+	userHeader, _ := gc.Get(consts.XUserHeader)
+	r.UserAuth = userHeader.(UserAuth)
+
+	return nil
+}
+
+type UpdateTaskResponse struct {
+	Code        string    `json:"code"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Status      string    `json:"status"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type DeleteTaskResponse struct {
+	Code      string    `json:"code"`
+	DeletedAt time.Time `json:"deleted_at"`
 }

@@ -2,6 +2,8 @@ package tasks
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -22,6 +24,8 @@ type Usecase interface {
 	CreateTask(ctx context.Context, r dtos.CreateTaskRequest) (dtos.CreateTaskResponse, error)
 	AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error)
 	GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error)
+	UpdateTask(ctx context.Context, r dtos.UpdateTaskRequest) (dtos.UpdateTaskResponse, error)
+	DeleteTask(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.DeleteTaskResponse, error)
 }
 
 type usecase struct {
@@ -193,6 +197,9 @@ func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos
 func (u usecase) GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error) {
 	task, err := u.taskRepositories.GetTaskByCode(ctx, r.Code)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return dtos.GetTaskDetailResponse{}, consts.ErrNotFound("task", r.Code)
+		}
 		return dtos.GetTaskDetailResponse{}, err
 	}
 
@@ -215,5 +222,62 @@ func (u usecase) GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest)
 		AssigneeID:  task.AssigneeID,
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,
+	}, nil
+}
+
+func (u usecase) UpdateTask(ctx context.Context, r dtos.UpdateTaskRequest) (dtos.UpdateTaskResponse, error) {
+	task, err := u.taskRepositories.GetTaskByCode(ctx, r.Code)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return dtos.UpdateTaskResponse{}, consts.ErrNotFound("task", r.Code)
+		}
+		return dtos.UpdateTaskResponse{}, err
+	}
+
+	user, err := u.userRepositories.GetUserByID(ctx, r.UserAuth.ID)
+	if err != nil {
+		return dtos.UpdateTaskResponse{}, err
+	}
+
+	if task.TeamID != user.TeamID {
+		return dtos.UpdateTaskResponse{}, consts.ErrInvalidTeam
+	}
+
+	updTask, err := u.taskRepositories.UpdateTask(ctx, daos.Task{
+		Title:       r.Title,
+		Description: r.Description,
+		Status:      r.Status,
+
+		Code: r.Code,
+	})
+	if err != nil {
+		return dtos.UpdateTaskResponse{}, err
+	}
+
+	return dtos.UpdateTaskResponse{
+		Code:        updTask.Code,
+		Title:       updTask.Title,
+		Description: updTask.Description,
+		Status:      updTask.Description,
+		UpdatedAt:   *updTask.UpdatedAt,
+	}, nil
+}
+
+func (u usecase) DeleteTask(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.DeleteTaskResponse, error) {
+	_, err := u.GetTaskDetail(ctx, r)
+	if err != nil {
+		return dtos.DeleteTaskResponse{}, err
+	}
+
+	task, err := u.taskRepositories.DeleteTask(ctx, daos.Task{
+		Code: r.Code,
+	})
+	if err != nil {
+		return dtos.DeleteTaskResponse{}, err
+	}
+
+	return dtos.DeleteTaskResponse{
+		Code:      r.Code,
+		DeletedAt: *task.DeletedAt,
 	}, nil
 }

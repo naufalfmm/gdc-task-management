@@ -33,3 +33,26 @@ WHERE team_id = $1
 ORDER BY id DESC
 LIMIT 1
 FOR UPDATE;
+
+-- name: UpdateTask :one
+UPDATE tasks
+SET
+    title = COALESCE(NULLIF(sqlc.arg(title)::text, ''), title),
+    description = COALESCE(NULLIF(sqlc.arg(description)::text, ''), description),
+    status = COALESCE(NULLIF(sqlc.arg(status)::text, ''), status),
+    updated_at = NOW()
+WHERE 
+    CASE WHEN sqlc.arg(id)::bigint <> 0 THEN id = sqlc.arg(id)::bigint ELSE TRUE END
+    AND CASE WHEN sqlc.arg(code)::text <> '' THEN code = sqlc.arg(code)::text ELSE TRUE END
+    AND deleted_at IS NOT NULL
+RETURNING *;
+
+-- name: DeleteTask :one
+UPDATE tasks
+SET
+    deleted_at = NOW()
+WHERE 
+    CASE WHEN sqlc.arg(id)::bigint <> 0 THEN id = sqlc.arg(id)::bigint ELSE TRUE END
+    AND CASE WHEN sqlc.arg(code)::text <> '' THEN code = sqlc.arg(code)::text ELSE TRUE END
+    AND deleted_at IS NOT NULL
+RETURNING *;  

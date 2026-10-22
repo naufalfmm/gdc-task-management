@@ -16,6 +16,8 @@ type Repository interface {
 	GetTaskByCode(ctx context.Context, code string) (daos.Task, error)
 	AssignTaskByID(ctx context.Context, id int64, assigneeID int64) (daos.Task, error)
 	GetLatestActiveTeamTask(ctx context.Context, teamID int64) (daos.Task, error)
+	UpdateTask(ctx context.Context, updatedTask daos.Task) (daos.Task, error)
+	DeleteTask(ctx context.Context, deletedTask daos.Task) (daos.Task, error)
 }
 
 type repository struct {
@@ -156,6 +158,48 @@ func (r *repository) GetLatestActiveTeamTask(ctx context.Context, teamID int64) 
 	}
 
 	t, err := q.GetLatestActiveTeamTask(ctx, pgtype.Int8{Int64: teamID, Valid: true})
+	if err != nil {
+		return daos.Task{}, err
+	}
+
+	return newDaoTask(t), nil
+}
+
+func (r *repository) UpdateTask(ctx context.Context, updatedTask daos.Task) (daos.Task, error) {
+	q := r.querier
+
+	tx, ok := txmanager.ExtractTx[pgx.Tx](ctx)
+	if ok {
+		q = tasks.New(tx)
+	}
+
+	t, err := q.UpdateTask(ctx, tasks.UpdateTaskParams{
+		Title:       updatedTask.Title,
+		Description: updatedTask.Description,
+		Status:      updatedTask.Status,
+
+		ID:   updatedTask.ID,
+		Code: updatedTask.Code,
+	})
+	if err != nil {
+		return daos.Task{}, err
+	}
+
+	return newDaoTask(t), nil
+}
+
+func (r *repository) DeleteTask(ctx context.Context, deletedTask daos.Task) (daos.Task, error) {
+	q := r.querier
+
+	tx, ok := txmanager.ExtractTx[pgx.Tx](ctx)
+	if ok {
+		q = tasks.New(tx)
+	}
+
+	t, err := q.DeleteTask(ctx, tasks.DeleteTaskParams{
+		ID:   deletedTask.ID,
+		Code: deletedTask.Code,
+	})
 	if err != nil {
 		return daos.Task{}, err
 	}

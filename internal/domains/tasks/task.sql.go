@@ -83,6 +83,41 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	return i, err
 }
 
+const deleteTask = `-- name: DeleteTask :one
+UPDATE tasks
+SET
+    deleted_at = NOW()
+WHERE 
+    CASE WHEN $1::bigint <> 0 THEN id = $1::bigint ELSE TRUE END
+    AND CASE WHEN $2::text <> '' THEN code = $2::text ELSE TRUE END
+    AND deleted_at IS NOT NULL
+RETURNING id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
+`
+
+type DeleteTaskParams struct {
+	ID   int64  `json:"id"`
+	Code string `json:"code"`
+}
+
+func (q *Queries) DeleteTask(ctx context.Context, arg DeleteTaskParams) (Task, error) {
+	row := q.db.QueryRow(ctx, deleteTask, arg.ID, arg.Code)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getLatestActiveTeamTask = `-- name: GetLatestActiveTeamTask :one
 SELECT id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
 FROM tasks
@@ -149,6 +184,53 @@ FOR UPDATE
 
 func (q *Queries) GetTaskByID(ctx context.Context, id int64) (Task, error) {
 	row := q.db.QueryRow(ctx, getTaskByID, id)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.UserID,
+		&i.TeamID,
+		&i.AssigneeID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateTask = `-- name: UpdateTask :one
+UPDATE tasks
+SET
+    title = COALESCE(NULLIF($1::text, ''), title),
+    description = COALESCE(NULLIF($2::text, ''), description),
+    status = COALESCE(NULLIF($3::text, ''), status),
+    updated_at = NOW()
+WHERE 
+    CASE WHEN $4::bigint <> 0 THEN id = $4::bigint ELSE TRUE END
+    AND CASE WHEN $5::text <> '' THEN code = $5::text ELSE TRUE END
+    AND deleted_at IS NOT NULL
+RETURNING id, code, user_id, team_id, assignee_id, title, description, status, created_at, updated_at, deleted_at
+`
+
+type UpdateTaskParams struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	ID          int64  `json:"id"`
+	Code        string `json:"code"`
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error) {
+	row := q.db.QueryRow(ctx, updateTask,
+		arg.Title,
+		arg.Description,
+		arg.Status,
+		arg.ID,
+		arg.Code,
+	)
 	var i Task
 	err := row.Scan(
 		&i.ID,

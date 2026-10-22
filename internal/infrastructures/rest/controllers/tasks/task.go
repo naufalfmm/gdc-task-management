@@ -139,7 +139,7 @@ func (c Controller) GetTaskDetail(gc *gin.Context) {
 
 	resp, err := c.taskUsecase.GetTaskDetail(gc.Request.Context(), req)
 	if err != nil {
-		c.buildErrorForAssignTask(gc, err)
+		c.buildErrorForGetTaskDetail(gc, err)
 		return
 	}
 
@@ -166,6 +166,18 @@ func (c Controller) buildErrorForGetTaskDetail(gc *gin.Context, err error) {
 		})
 	}
 
+	if errors.Is(err, consts.ErrNotFoundCmp) {
+		gc.JSON(http.StatusNotFound, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeNotFound,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+	}
+
 	gc.JSON(statusCode, dtos.Response[dtos.ErrorResponse]{
 		Status:    false,
 		Code:      consts.ErrorCodeInternalError,
@@ -174,5 +186,65 @@ func (c Controller) buildErrorForGetTaskDetail(gc *gin.Context, err error) {
 		Data: dtos.ErrorResponse{
 			Error: consts.ErrDefaultError,
 		},
+	})
+}
+
+func (c Controller) UpdateTask(gc *gin.Context) {
+	var req dtos.UpdateTaskRequest
+	if err := req.FromGinContext(gc); err != nil {
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeBadRequest,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+
+		return
+	}
+
+	resp, err := c.taskUsecase.UpdateTask(gc.Request.Context(), req)
+	if err != nil {
+		c.buildErrorForGetTaskDetail(gc, err)
+		return
+	}
+
+	gc.JSON(http.StatusOK, dtos.Response[dtos.UpdateTaskResponse]{
+		Status:    true,
+		Message:   "Success",
+		Timestamp: time.Now(),
+		Data:      resp,
+	})
+}
+
+func (c Controller) DeleteTask(gc *gin.Context) {
+	var req dtos.GetTaskDetailRequest
+	if err := req.FromGinContext(gc); err != nil {
+		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
+			Status:    false,
+			Code:      consts.ErrorCodeBadRequest,
+			Message:   err.Error(),
+			Timestamp: time.Now(),
+			Data: dtos.ErrorResponse{
+				Error: err,
+			},
+		})
+
+		return
+	}
+
+	resp, err := c.taskUsecase.DeleteTask(gc.Request.Context(), req)
+	if err != nil {
+		c.buildErrorForGetTaskDetail(gc, err)
+		return
+	}
+
+	gc.JSON(http.StatusOK, dtos.Response[dtos.DeleteTaskResponse]{
+		Status:    true,
+		Message:   "Success",
+		Timestamp: time.Now(),
+		Data:      resp,
 	})
 }
