@@ -23,9 +23,9 @@ import (
 type Usecase interface {
 	CreateTask(ctx context.Context, r dtos.CreateTaskRequest) (dtos.CreateTaskResponse, error)
 	AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos.AssignTaskResponse, error)
-	GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error)
+	GetTaskDetail(ctx context.Context, r dtos.TaskDetailRequest) (dtos.GetTaskDetailResponse, error)
 	UpdateTask(ctx context.Context, r dtos.UpdateTaskRequest) (dtos.UpdateTaskResponse, error)
-	DeleteTask(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.DeleteTaskResponse, error)
+	DeleteTask(ctx context.Context, r dtos.TaskDetailRequest) (dtos.DeleteTaskResponse, error)
 }
 
 type usecase struct {
@@ -194,7 +194,7 @@ func (u usecase) AssignTask(ctx context.Context, r dtos.AssignTaskRequest) (dtos
 	return resp, nil
 }
 
-func (u usecase) GetTaskDetail(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.GetTaskDetailResponse, error) {
+func (u usecase) GetTaskDetail(ctx context.Context, r dtos.TaskDetailRequest) (dtos.GetTaskDetailResponse, error) {
 	task, err := u.taskRepositories.GetTaskByCode(ctx, r.Code)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -263,7 +263,7 @@ func (u usecase) UpdateTask(ctx context.Context, r dtos.UpdateTaskRequest) (dtos
 	}, nil
 }
 
-func (u usecase) DeleteTask(ctx context.Context, r dtos.GetTaskDetailRequest) (dtos.DeleteTaskResponse, error) {
+func (u usecase) DeleteTask(ctx context.Context, r dtos.TaskDetailRequest) (dtos.DeleteTaskResponse, error) {
 	_, err := u.GetTaskDetail(ctx, r)
 	if err != nil {
 		return dtos.DeleteTaskResponse{}, err

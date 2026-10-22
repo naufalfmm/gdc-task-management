@@ -84,12 +84,12 @@ func (r AssignTaskResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r)
 }
 
-type GetTaskDetailRequest struct {
+type TaskDetailRequest struct {
 	Code     string   `json:"-"`
 	UserAuth UserAuth `json:"-"`
 }
 
-func (r *GetTaskDetailRequest) FromGinContext(gc *gin.Context) error {
+func (r *TaskDetailRequest) FromGinContext(gc *gin.Context) error {
 	r.Code = gc.Param("code")
 	if r.Code == "" {
 		return consts.ErrInvalidParam("code")

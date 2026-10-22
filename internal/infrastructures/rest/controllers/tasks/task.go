@@ -122,7 +122,7 @@ func (c Controller) buildErrorForAssignTask(gc *gin.Context, err error) {
 }
 
 func (c Controller) GetTaskDetail(gc *gin.Context) {
-	var req dtos.GetTaskDetailRequest
+	var req dtos.TaskDetailRequest
 	if err := req.FromGinContext(gc); err != nil {
 		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
 			Status:    false,
@@ -220,7 +220,7 @@ func (c Controller) UpdateTask(gc *gin.Context) {
 }
 
 func (c Controller) DeleteTask(gc *gin.Context) {
-	var req dtos.GetTaskDetailRequest
+	var req dtos.TaskDetailRequest
 	if err := req.FromGinContext(gc); err != nil {
 		gc.JSON(http.StatusBadRequest, dtos.Response[dtos.ErrorResponse]{
 			Status:    false,
